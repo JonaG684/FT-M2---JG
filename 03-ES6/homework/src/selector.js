@@ -5,17 +5,84 @@ var traverseDomAndCollectElements = function (matchFunc, startEl) {
     startEl = document.body;
   }
 
-  // recorre el árbol del DOM y recolecta elementos que matchien en resultSet
-  // usa matchFunc para identificar elementos que matchien
+  function traverse(el, matchFunc, isDirectChild) {
+    if (matchFunc(el)) {
+      resultSet.push(el);
+    }
 
-  // TU CÓDIGO AQUÍ
+    var children = el.children;
+    for (var i = 0; i < children.length; i++) {
+      if (isDirectChild) {
+        traverse(children[i], matchFunc, true);
+      } else {
+        traverse(children[i], matchFunc, false);
+      }
+    }
+  }
+
+  traverse(startEl, matchFunc, false);
+
+  return resultSet;
 };
 
-// Detecta y devuelve el tipo de selector
-// devuelve uno de estos tipos: id, class, tag.class, tag
+var traverseWithCombinator = function (el, matchFunc, combinator) {
+  var children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    var child = children[i];
+    if (combinator === ">") {
+      if (matchFunc(child)) {
+        resultSet.push(child);
+      }
+    } else {
+      if (matchFunc(child)) {
+        resultSet.push(child);
+      }
+      traverseWithCombinator(child, matchFunc, combinator);
+    }
+  }
+};
+
+var $ = function (selector) {
+  var elements;
+  var selectorMatchFunc = matchFunctionMaker(selector);
+
+  var combinator = "";
+  if (selector.includes(">")) {
+    combinator = ">";
+    selector = selector.slice(selector.indexOf(">") + 1).trim();
+  } else if (selector.includes(" ")) {
+    combinator = " ";
+    selector = selector.slice(selector.indexOf(" ") + 1).trim();
+  }
+
+  var resultSet = [];
+  var rootElements = traverseDomAndCollectElements(selectorMatchFunc);
+
+  for (var i = 0; i < rootElements.length; i++) {
+    var rootElement = rootElements[i];
+    if (combinator !== "") {
+      traverseWithCombinator(rootElement, selectorMatchFunc, combinator);
+    } else {
+      resultSet.push(rootElement);
+    }
+  }
+
+  elements = resultSet;
+  return elements;
+};
 
 var selectorTypeMatcher = function (selector) {
-  // tu código aquí
+  if (selector.includes("#")) {
+    return "id";
+  } else if (selector.includes(".")) {
+    if (selector.indexOf(".") !== 0) { // Verificar si el punto no está al principio
+      return "tag.class";
+    } else {
+      return "class";
+    }
+  } else {
+    return "tag";
+  }
 };
 
 // NOTA SOBRE LA FUNCIÓN MATCH
@@ -26,17 +93,27 @@ var selectorTypeMatcher = function (selector) {
 var matchFunctionMaker = function (selector) {
   var selectorType = selectorTypeMatcher(selector);
   var matchFunction;
-  if (selectorType === "id") {
-  } else if (selectorType === "class") {
-  } else if (selectorType === "tag.class") {
-  } else if (selectorType === "tag") {
-  }
-  return matchFunction;
-};
 
-var $ = function (selector) {
-  var elements;
-  var selectorMatchFunc = matchFunctionMaker(selector);
-  elements = traverseDomAndCollectElements(selectorMatchFunc);
-  return elements;
+  if (selectorType === "id") {
+    var targetId = selector.slice(1); // Eliminar el primer carácter (#)
+    matchFunction = function (el) {
+      return el.id === targetId;
+    };
+  } else if (selectorType === "class") {
+    var targetClass = selector.slice(1); // Eliminar el primer carácter (.)
+    matchFunction = function (el) {
+      return el.classList.contains(targetClass);
+    };
+  } else if (selectorType === "tag.class") {
+    var [tag, className] = selector.split(".");
+    matchFunction = function (el) {
+      return el.tagName.toLowerCase() === tag && el.classList.contains(className);
+    };
+  } else if (selectorType === "tag") {
+    matchFunction = function (el) {
+      return el.tagName.toLowerCase() === selector.toLowerCase();
+    };
+  }
+
+  return matchFunction;
 };
