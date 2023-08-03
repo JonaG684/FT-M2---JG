@@ -90,30 +90,19 @@ var selectorTypeMatcher = function (selector) {
 // parametro y devuelve true/false dependiendo si el elemento
 // matchea el selector.
 
-var matchFunctionMaker = function (selector) {
-  var selectorType = selectorTypeMatcher(selector);
-  var matchFunction;
+const matchFunctionMaker = (selector) => {
+  const selectorType = selectorTypeMatcher(selector);
 
   if (selectorType === "id") {
-    var targetId = selector.slice(1); // Eliminar el primer carácter (#)
-    matchFunction = function (el) {
-      return el.id === targetId;
-    };
+    const targetId = selector.slice(1); // Eliminar el primer carácter (#)
+    return (el) => el.id === targetId;
   } else if (selectorType === "class") {
-    var targetClass = selector.slice(1); // Eliminar el primer carácter (.)
-    matchFunction = function (el) {
-      return el.classList.contains(targetClass);
-    };
+    const targetClass = selector.slice(1); // Eliminar el primer carácter (.)
+    return (el) => el.classList.contains(targetClass);
   } else if (selectorType === "tag.class") {
-    var [tag, className] = selector.split(".");
-    matchFunction = function (el) {
-      return el.tagName.toLowerCase() === tag && el.classList.contains(className);
-    };
+    const [tag, className] = selector.split(".");
+    return (el) => el.tagName.toLowerCase() === tag && el.classList.contains(className);
   } else if (selectorType === "tag") {
-    matchFunction = function (el) {
-      return el.tagName.toLowerCase() === selector.toLowerCase();
-    };
+    return (el) => el.tagName.toLowerCase() === selector.toLowerCase();
   }
-
-  return matchFunction;
 };
